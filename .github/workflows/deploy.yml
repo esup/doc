@@ -28,19 +28,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         with:
           # 本站启用了 lastUpdated，需要完整 git 历史；关掉的话可以去掉这一行
           fetch-depth: 0
 
       - name: Setup Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: 22 # VitePress 2.0 alpha 最低要求 Node 22，与本地开发环境保持一致
           cache: npm
 
       - name: Setup Pages
-        uses: actions/configure-pages@v4
+        uses: actions/configure-pages@v6
+        # 若 Pages 已在仓库 Settings → Pages → Source 选为 GitHub Actions，上面就够了。
+        # 如果想让 CI 自动开启 Pages，必须改用 PAT/GitHub App 令牌（GITHUB_TOKEN 权限不足）：
+        #   with:
+        #     enablement: true
+        #     token: ${{ secrets.PAGES_PAT }}
 
       - name: Install dependencies
         # npm ci 依赖已提交的 package-lock.json，务必纳入版本控制
@@ -50,7 +55,7 @@ jobs:
         run: npm run docs:build
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: docs/.vitepress/dist
 
@@ -65,4 +70,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
