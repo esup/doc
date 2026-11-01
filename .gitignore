@@ -1,0 +1,7 @@
+node_modules/
+# 带斜杠的模式会锚定到仓库根，所以这里必须用 **/ 才能匹配任意深度
+**/.vitepress/cache/
+**/.vitepress/dist/
+**/.vitepress/.temp/
+*.log
+.DS_Store

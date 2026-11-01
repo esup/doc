@@ -1,0 +1,68 @@
+# 构建 VitePress 站点并将其部署到 GitHub Pages
+#
+name: Deploy VitePress site to Pages
+
+on:
+  # 推送到 main 分支时运行；若默认分支是 master 请自行修改
+  push:
+    branches: [main]
+
+  # 允许在 Actions 页面手动触发
+  workflow_dispatch:
+
+# pages: write 供 deploy-pages 使用；id-token: write 用于签发 OIDC 令牌换取部署凭证，
+# 因此无需额外配置 PAT
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 同一时刻只跑一次部署：排队中的旧 run 会被跳过，但正在运行的不取消，
+# 以保证生产部署完整跑完
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          # 本站启用了 lastUpdated，需要完整 git 历史；关掉的话可以去掉这一行
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22 # VitePress 2.0 alpha 最低要求 Node 22，与本地开发环境保持一致
+          cache: npm
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Install dependencies
+        # npm ci 依赖已提交的 package-lock.json，务必纳入版本控制
+        run: npm ci
+
+      - name: Build with VitePress
+        run: npm run docs:build
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/.vitepress/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    name: Deploy
+    # environment.name 必须是 github-pages，URL 取自下方 step 的输出
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
